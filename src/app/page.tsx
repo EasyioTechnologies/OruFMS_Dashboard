@@ -1,15 +1,14 @@
 "use client";
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import FMSDemo from '../components/FMSDemo';
+import { motion, Variants } from 'framer-motion';
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -26,7 +25,7 @@ export default function Home() {
         {/* Animated Abstract Background Image */}
         <motion.div
           initial={{ scale: 1.1, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.4 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
           style={{
             position: 'absolute',
@@ -35,7 +34,8 @@ export default function Home() {
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             zIndex: 0,
-            mixBlendMode: 'luminosity'
+            mixBlendMode: 'luminosity',
+            filter: 'brightness(0.3) blur(6px)'
           }}
         />
 
@@ -87,81 +87,58 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Bento Grid Architecture Section */}
-      <section className="section" style={{ backgroundColor: 'var(--paper)' }}>
+      {/* The Anatomy of Scale Section (Restructured) */}
+      <section className="section" style={{ backgroundColor: 'var(--canvas)' }}>
         <div className="container">
-          
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeUp}
-            style={{ textAlign: 'center', marginBottom: '4rem' }}
+            style={{ textAlign: 'center', marginBottom: '5rem' }}
           >
-            <h2 style={{ fontSize: '3rem', marginBottom: '1rem' }}>The Architecture of Scale</h2>
+            <h2 style={{ fontSize: '3.5rem', marginBottom: '1rem', fontFamily: 'var(--font-serif)' }}>The Anatomy of Scale</h2>
             <p style={{ maxWidth: '600px', margin: '0 auto', fontSize: '1.25rem', opacity: 0.8 }}>
-              When a factory scales, systems break. Oru FMS enforces structure over chaos. Explore the core specifications that make our platform impenetrable.
+              When a factory scales, systems break. Explore the core specifications and real-world case studies that make our platform impenetrable.
             </p>
           </motion.div>
 
-          <motion.div 
-            className="bento-grid"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
-            
-            {/* Interactive Demo (Large Card) */}
-            <motion.div variants={fadeUp} className="bento-card col-span-2 row-span-2" style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '2rem', borderBottom: '2px solid var(--ink)', backgroundColor: 'var(--ink)', color: 'var(--paper)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.5rem' }}>Experience the Sync</h3>
-                <p style={{ margin: 0, opacity: 0.8, fontSize: '0.875rem' }}>Interact with the live simulation to see FMS neutralize latency.</p>
-              </div>
-              <div style={{ backgroundColor: 'var(--canvas)', height: '100%' }}>
-                <FMSDemo />
-              </div>
-            </motion.div>
-
-            {/* Offline-First Spec (Small Card) */}
-            <motion.div variants={fadeUp} className="bento-card">
-              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem', textTransform: 'uppercase' }}>SPECIFICATION 01</div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Offline-First Sync</h3>
-              <p style={{ opacity: 0.8, fontSize: '0.875rem', flex: 1 }}>
+          {/* Feature 1: Offline First */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4rem', marginBottom: '6rem', alignItems: 'center' }}>
+            <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ flex: '1 1 400px' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>SPECIFICATION 01</div>
+              <h3 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', lineHeight: 1.1 }}>Offline-First Sync Protocol</h3>
+              <p style={{ opacity: 0.8, fontSize: '1.125rem', marginBottom: '2rem', lineHeight: 1.6 }}>
                 Local network caching ensures zero downtime. When the network returns, conflict-free sync protocols merge your local floor operations directly into the cloud ledger without data loss.
               </p>
             </motion.div>
+            <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ flex: '1 1 400px', padding: '3rem', border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', position: 'relative' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase' }}>PRODUCTION IMPACT: Vanguard Motors</div>
+              <p style={{ opacity: 0.8, fontSize: '1rem', fontStyle: 'italic', marginBottom: '1.5rem' }}>
+                "A 14-hour fiber outage historically cost us $200k/hr in downtime. Oru FMS's offline architecture allowed our nodes to keep caching instructions. When the connection returned, everything synced conflict-free."
+              </p>
+              <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#2e7d32' }}>$2.8M SAVED IN A SINGLE OUTAGE</div>
+            </motion.div>
+          </div>
 
-            {/* Node-Locked Security Spec (Small Card) */}
-            <motion.div variants={fadeUp} className="bento-card" style={{ backgroundColor: 'var(--ink)', color: 'var(--paper)' }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem', textTransform: 'uppercase' }}>SPECIFICATION 02</div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Node-Locked Hash</h3>
-              <p style={{ opacity: 0.8, fontSize: '0.875rem', flex: 1 }}>
+          {/* Feature 2: Node-Locked Security */}
+          <div style={{ display: 'flex', flexWrap: 'wrap-reverse', gap: '4rem', alignItems: 'center' }}>
+            <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ flex: '1 1 400px', padding: '3rem', border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', position: 'relative' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase' }}>PRODUCTION IMPACT: Nexus Assembly</div>
+              <p style={{ opacity: 0.8, fontSize: '1rem', fontStyle: 'italic', marginBottom: '1.5rem' }}>
+                "We struggled with unauthorized access to sensitive job cards from off-site networks. By deploying Oru FMS, we leveraged strict hardware node-locking. External breach vectors were eliminated overnight."
+              </p>
+              <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#2e7d32' }}>0 DATA LEAKS IN 18 MONTHS</div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ flex: '1 1 400px' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>SPECIFICATION 02</div>
+              <h3 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', lineHeight: 1.1 }}>Node-Locked Hash Security</h3>
+              <p style={{ opacity: 0.8, fontSize: '1.125rem', marginBottom: '2rem', lineHeight: 1.6 }}>
                 Every terminal is cryptographically bound to its physical device via a unique hardware ID hash. Remote authorization breaches are statistically and practically impossible.
               </p>
             </motion.div>
+          </div>
 
-            {/* Case Study 1 (Medium Card) */}
-            <motion.div variants={fadeUp} className="bento-card" style={{ borderStyle: 'dashed' }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase' }}>PRODUCTION IMPACT</div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', fontFamily: 'var(--font-serif)' }}>Vanguard Motors</h3>
-              <p style={{ opacity: 0.8, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                A 14-hour fiber outage historically cost $200k/hr in downtime. Oru FMS's offline architecture saved Vanguard $2.8M in a single incident.
-              </p>
-              <div style={{ marginTop: 'auto', fontWeight: 800, fontSize: '1.5rem' }}>$2.8M SAVED</div>
-            </motion.div>
-
-            {/* Case Study 2 (Medium Card) */}
-            <motion.div variants={fadeUp} className="bento-card" style={{ borderStyle: 'dashed' }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 800, opacity: 0.6, marginBottom: '1rem', textTransform: 'uppercase' }}>PRODUCTION IMPACT</div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', fontFamily: 'var(--font-serif)' }}>Nexus Assembly</h3>
-              <p style={{ opacity: 0.8, fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Leveraged strict hardware node-locking to eliminate 100% of external breach vectors overnight.
-              </p>
-              <div style={{ marginTop: 'auto', fontWeight: 800, fontSize: '1.5rem' }}>0 DATA LEAKS</div>
-            </motion.div>
-
-          </motion.div>
         </div>
       </section>
 

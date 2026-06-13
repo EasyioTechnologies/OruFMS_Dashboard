@@ -51,27 +51,17 @@ export default function Dashboard() {
 
   const fetchTransactions = async (uid: string) => {
     try {
-      const q = query(collection(db, "transactions"), where("owner_uid", "==", uid), orderBy("created_at", "desc"));
+      // Query without orderBy to prevent Firebase requiring a composite index
+      const q = query(collection(db, "transactions"), where("owner_uid", "==", uid));
       const querySnapshot = await getDocs(q);
       const trans: any[] = [];
       querySnapshot.forEach((doc) => {
         trans.push({ id: doc.id, ...doc.data() });
       });
-      setTransactions(trans);
+      // Sort client-side
+      setTransactions(trans.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0)));
     } catch (err) {
-      console.error("Error fetching transactions (If missing index, check console for link)", err);
-      // Fallback without ordering if index is missing initially
-      try {
-        const qFallback = query(collection(db, "transactions"), where("owner_uid", "==", uid));
-        const fbSnap = await getDocs(qFallback);
-        const fbTrans: any[] = [];
-        fbSnap.forEach((doc) => {
-          fbTrans.push({ id: doc.id, ...doc.data() });
-        });
-        setTransactions(fbTrans.sort((a,b) => b.created_at?.seconds - a.created_at?.seconds));
-      } catch (e) {
-        console.error("Fallback error", e);
-      }
+      console.error("Error fetching transactions", err);
     }
   };
 

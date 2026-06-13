@@ -19,6 +19,7 @@ function Footer() {
           <p style={{ fontSize: '0.875rem' }}>© 2026 EasyioTechnologies. All rights reserved.</p>
         </div>
         <div style={{ display: 'flex', gap: '2rem', justifyContent: 'flex-end', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>
+          <Link href="/case-studies" style={{ border: 'none' }}>Analytics & Case Studies</Link>
           <Link href="/terms" style={{ border: 'none' }}>Terms</Link>
           <Link href="/privacy" style={{ border: 'none' }}>Privacy</Link>
           <Link href="/refunds" style={{ border: 'none' }}>Refunds</Link>
