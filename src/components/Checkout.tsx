@@ -1,16 +1,30 @@
 "use client";
 
-import { useState } from 'react';
-import { db } from '../lib/firebase';
+import { useState, useEffect } from 'react';
+import { db, auth } from '../lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [licenseType, setLicenseType] = useState('single_user');
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
   
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      alert("You must be logged in to procure a key.");
+      return;
+    }
+    
     setLoading(true);
     
     // Generate a secure alphanumeric key
@@ -30,7 +44,8 @@ export default function Checkout() {
         status: 'inactive',
         created_at: serverTimestamp(),
         active_devices: [],
-        bound_device_id: null
+        bound_device_id: null,
+        owner_uid: user.uid
       });
       setGeneratedKey(newKey);
     } catch (error) {
@@ -63,9 +78,15 @@ export default function Checkout() {
             </select>
           </div>
           
-          <button type="submit" className="oru-btn" style={{ width: '100%' }} disabled={loading}>
-            {loading ? 'PROCESSING...' : 'MOCK CHECKOUT & GENERATE KEY'}
-          </button>
+          {user ? (
+            <button type="submit" className="oru-btn" style={{ width: '100%' }} disabled={loading}>
+              {loading ? 'PROCESSING...' : 'MOCK CHECKOUT & GENERATE KEY'}
+            </button>
+          ) : (
+            <button type="button" className="oru-btn" style={{ width: '100%', opacity: 0.5, cursor: 'not-allowed' }} disabled>
+              LOG IN TO PROCURE KEY
+            </button>
+          )}
         </form>
       ) : (
         <div>

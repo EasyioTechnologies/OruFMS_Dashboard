@@ -16,7 +16,7 @@ function Navbar() {
       <div style={{ display: 'flex', gap: '2rem', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase' }}>
         <Link href="/pricing" style={{ border: 'none' }}>Pricing</Link>
         <Link href="/contact" style={{ border: 'none' }}>Contact</Link>
-        <Link href="/admin/login" style={{ border: 'none' }}>Admin</Link>
+        <Link href="/login" style={{ border: 'none' }}>Client Login</Link>
       </div>
     </nav>
   );
