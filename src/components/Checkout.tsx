@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { db, auth } from '../lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDocs, query, collection, where } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,7 +12,31 @@ const ROLES = [
   'Finance', 'HR', 'Payroll'
 ];
 
-export default function Checkout() {
+const ROLE_SHORTCODES: {[key: string]: string} = {
+  'Admin': 'ADM',
+  'Manager': 'MGR',
+  'Floor Manager': 'FLR',
+  'Machine Ops': 'OPS',
+  'Inventory Manager': 'INV',
+  'Procurement Manager': 'PRC',
+  'Finance': 'FIN',
+  'HR': 'HRX',
+  'Payroll': 'PRL'
+};
+
+const DEFAULT_RBAC: {[key: string]: any} = {
+  'Admin': { 'Manage Orders': true, 'Manage Inventory': true, 'Manage HR': true, 'View Finance': true },
+  'Manager': { 'Manage Orders': true, 'Manage Inventory': true, 'Manage HR': false, 'View Finance': false },
+  'Floor Manager': { 'Manage Orders': true, 'Manage Inventory': false, 'Manage HR': false, 'View Finance': false },
+  'Machine Ops': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': false, 'View Finance': false },
+  'Inventory Manager': { 'Manage Orders': false, 'Manage Inventory': true, 'Manage HR': false, 'View Finance': false },
+  'Procurement Manager': { 'Manage Orders': true, 'Manage Inventory': true, 'Manage HR': false, 'View Finance': false },
+  'Finance': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': false, 'View Finance': true },
+  'HR': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': true, 'View Finance': false },
+  'Payroll': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': true, 'View Finance': true }
+};
+
+export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [licenseType, setLicenseType] = useState('free_trial');
@@ -80,6 +104,20 @@ export default function Checkout() {
     if (loading) return;
     
     setLoading(true);
+
+    if (licenseType === 'free_trial') {
+      try {
+        const q = query(collection(db, 'licenses'), where('owner_uid', '==', user.uid), where('tier', '==', 'free_trial'));
+        const existing = await getDocs(q);
+        if (!existing.empty) {
+          alert("You have already claimed a free trial. You can only create one free trial Tenant ID per account.");
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking for existing free trial", err);
+      }
+    }
     
     await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -94,11 +132,16 @@ export default function Checkout() {
     const expiryDate = calculateExpiry();
     const maxUsers = calculateMaxUsers();
     
-    // Determine allowed roles
+    // Determine allowed roles and build RBAC
     let allowedRoles: {[key: string]: number} = { 'Admin': 1 };
+    let initialRbac: {[key: string]: any} = { 'Admin': DEFAULT_RBAC['Admin'] };
+    
     if (licenseType === 'multi_seat') {
       Object.entries(additionalRoles).forEach(([role, count]) => {
-        if (count > 0) allowedRoles[role] = count;
+        if (count > 0) {
+          allowedRoles[role] = count;
+          initialRbac[role] = DEFAULT_RBAC[role] || {};
+        }
       });
     }
 
@@ -110,16 +153,48 @@ export default function Checkout() {
       // Create Tenant / License document
       await setDoc(doc(db, 'licenses', newKey), {
         type: flutterType,
+        tier: licenseType,
         max_users: maxUsers,
         status: 'inactive',
         created_at: serverTimestamp(),
         expiry_date: expiryDate.toISOString(),
         allowed_roles: allowedRoles,
-        active_devices: [],
-        bound_device_id: null,
         owner_uid: user.uid,
-        rbac_controls: {} // Default empty RBAC policy
+        rbac_controls: initialRbac
       });
+
+      // Generate Sub-Licenses if multi_seat
+      if (licenseType === 'multi_seat') {
+        const subLicensePromises: Promise<void>[] = [];
+        Object.entries(allowedRoles).forEach(([role, count]) => {
+          for (let i = 0; i < count; i++) {
+            const shortcode = ROLE_SHORTCODES[role] || 'SUB';
+            let subKey = '';
+            for (let j = 0; j < 16 - shortcode.length; j++) {
+              if (j > 0 && j % 4 === 0) subKey += '-';
+              subKey += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            subKey += shortcode;
+            
+            subLicensePromises.push(
+              setDoc(doc(db, 'licenses', subKey), {
+                type: 'sub_node',
+                parent_id: newKey,
+                role: role,
+                seat_index: i + 1,
+                status: 'inactive',
+                bound_device_id: null,
+                device_info: null,
+                device_nickname: null,
+                device_pin: null,
+                owner_uid: user.uid,
+                created_at: serverTimestamp()
+              })
+            );
+          }
+        });
+        await Promise.all(subLicensePromises);
+      }
 
       // Create an initialization doc for the tenant data scope
       await setDoc(doc(db, 'tenants', newKey), {
@@ -141,6 +216,9 @@ export default function Checkout() {
       }
 
       setGeneratedKey(newKey);
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       console.error("Error generating key:", error);
       alert("Failed to generate key. See console.");

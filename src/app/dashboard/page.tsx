@@ -10,9 +10,11 @@ import Checkout from '../../components/Checkout';
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [licenses, setLicenses] = useState<any[]>([]);
+  const [masterLicenses, setMasterLicenses] = useState<any[]>([]);
+  const [subNodes, setSubNodes] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'tenants' | 'procurement' | 'billing'>('tenants');
+  const [configLicenseId, setConfigLicenseId] = useState<string | null>(null);
   
   // Device Editing State (Nickname & PIN)
   const [editingDevice, setEditingDevice] = useState<{licenseId: string, deviceId: string | 'single', type: 'nickname' | 'pin'} | null>(null);
@@ -40,11 +42,15 @@ export default function Dashboard() {
     try {
       const q = query(collection(db, "licenses"), where("owner_uid", "==", uid));
       const querySnapshot = await getDocs(q);
-      const lics: any[] = [];
+      const masters: any[] = [];
+      const subs: any[] = [];
       querySnapshot.forEach((doc) => {
-        lics.push({ id: doc.id, ...doc.data() });
+        const data = { id: doc.id, ...doc.data() };
+        if (data.type === 'sub_node') subs.push(data);
+        else masters.push(data);
       });
-      setLicenses(lics);
+      setMasterLicenses(masters);
+      setSubNodes(subs);
     } catch (err) {
       console.error("Error fetching tenants", err);
     } finally {
@@ -83,23 +89,17 @@ export default function Dashboard() {
     }
   };
 
-  const handleRevokeMulti = async (licenseId: string, deviceIdToRemove: string, currentDevices: any[]) => {
-    if (!confirm("Revoke this node? It will be permanently disconnected.")) return;
-    try {
-      const updatedDevices = currentDevices.filter(d => d.id !== deviceIdToRemove);
-      await updateDoc(doc(db, "licenses", licenseId), {
-        active_devices: updatedDevices,
-        status: updatedDevices.length === 0 ? 'inactive' : 'active'
-      });
-      fetchLicenses(user!.uid);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to revoke node.");
-    }
-  };
+    // handleRevokeMulti is deprecated with sub-nodes
 
   const handleSaveDeviceDetails = async (lic: any) => {
     if (!editingDevice) return;
+    
+    if (editingDevice.type === 'pin') {
+      if (!/^[a-zA-Z0-9]{6}$/.test(tempValue)) {
+        alert("Node Password must be exactly 6 alphanumeric characters.");
+        return;
+      }
+    }
     
     try {
       const docRef = doc(db, "licenses", lic.id);
@@ -197,18 +197,28 @@ export default function Dashboard() {
         {activeTab === 'tenants' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-              <h2 style={{ fontSize: '2rem', margin: 0 }}>Tenant Workspaces</h2>
-              <button onClick={() => fetchLicenses(user!.uid)} className="oru-btn oru-btn-outline" style={{ padding: '0.5rem 1rem' }}>REFRESH</button>
+              <h2 style={{ fontSize: '2rem', margin: 0 }}>
+                {configLicenseId ? 'Workspace Configuration' : 'Tenant Workspaces'}
+              </h2>
+              <div>
+                {configLicenseId && (
+                  <button onClick={() => setConfigLicenseId(null)} className="oru-btn oru-btn-outline" style={{ padding: '0.5rem 1rem', marginRight: '1rem' }}>BACK TO LIST</button>
+                )}
+                <button onClick={() => fetchLicenses(user!.uid)} className="oru-btn oru-btn-outline" style={{ padding: '0.5rem 1rem' }}>REFRESH</button>
+              </div>
             </div>
 
-            {licenses.length === 0 ? (
+            {masterLicenses.length === 0 ? (
               <div style={{ padding: '4rem', textAlign: 'center', border: '2px solid var(--ink)', backgroundColor: 'var(--paper)' }}>
                 <p style={{ opacity: 0.7 }}>You do not own any tenant workspaces yet. Visit Procurement.</p>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                {licenses.map(lic => (
-                  <div key={lic.id} style={{ border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column' }}>
+            ) : configLicenseId ? (
+              // DETAILED CONFIGURATION VIEW
+              (() => {
+                const lic = masterLicenses.find(l => l.id === configLicenseId);
+                if (!lic) return <div>License not found.</div>;
+                return (
+                  <div style={{ border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column' }}>
                     
                     {/* Header */}
                     <div style={{ padding: '1.5rem', borderBottom: '2px solid var(--ink)', backgroundColor: 'var(--ink)', color: 'var(--paper)', display: 'flex', justifyContent: 'space-between' }}>
@@ -263,16 +273,16 @@ export default function Dashboard() {
 
                                 {/* PIN */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <strong style={{ fontSize: '0.875rem' }}>Master PIN:</strong>
+                                  <strong style={{ fontSize: '0.875rem' }}>Node Password:</strong>
                                   {editingDevice?.licenseId === lic.id && editingDevice.type === 'pin' ? (
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      <input value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder="e.g. 1234" style={{ padding: '0.25rem' }} />
+                                      <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3" maxLength={6} style={{ padding: '0.25rem', textTransform: 'uppercase' }} />
                                       <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
                                       <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
                                     </div>
                                   ) : (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <span style={{ fontFamily: 'monospace' }}>{lic.device_pin ? '****' : 'Not Set'}</span>
+                                      <span style={{ fontFamily: 'monospace' }}>{lic.device_pin ? '******' : 'Not Set'}</span>
                                       <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: 'single', type: 'pin' }); setTempValue(lic.device_pin || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
                                     </div>
                                   )}
@@ -280,68 +290,87 @@ export default function Dashboard() {
                               </div>
                             ) : (
                               <div style={{ padding: '1rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.875rem', opacity: 0.7 }}>
-                                NO NODE CONNECTED (1 SEAT AVAILABLE)
+                                NOT LINKED YET
                               </div>
                             )}
                           </div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                              SEATS UTILIZED: {(lic.active_devices || []).length} / {lic.max_users}
-                            </div>
-                            {(lic.active_devices || []).map((device: any, index: number) => (
-                              <div key={index} style={{ padding: '1rem', border: '1px solid var(--ink)', backgroundColor: 'var(--canvas)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                  <div>
-                                    <strong style={{ fontSize: '0.875rem' }}>Device ID:</strong><br/>
-                                    <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{device.id}</span>
+                            {(() => {
+                              const mySubs = subNodes.filter(sn => sn.parent_id === lic.id).sort((a,b) => a.role.localeCompare(b.role) || a.seat_index - b.seat_index);
+                              const usedSeats = mySubs.filter(sn => sn.bound_device_id).length;
+                              return (
+                                <>
+                                  <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>
+                                    SEATS UTILIZED: {usedSeats} / {lic.max_users}
                                   </div>
-                                  <button onClick={() => handleRevokeMulti(lic.id, device.id, lic.active_devices)} className="oru-btn oru-btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'red' }}>REVOKE</button>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '1rem' }}>
-                                  <strong>Telemetry OS/Model:</strong> {device.info || 'Unknown'}
-                                </div>
+                                  {mySubs.map((device: any, index: number) => (
+                                    <div key={index} style={{ padding: '1rem', border: '1px solid var(--ink)', backgroundColor: 'var(--canvas)' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                        <div>
+                                          <strong style={{ fontSize: '0.875rem' }}>Sub-License Key ({device.role} Seat {device.seat_index}):</strong><br/>
+                                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 'bold' }}>{device.id}</span>
+                                        </div>
+                                        {device.bound_device_id && (
+                                          <button onClick={() => handleRevokeSingle(device.id)} className="oru-btn oru-btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'red' }}>REVOKE</button>
+                                        )}
+                                      </div>
+                                      
+                                      {device.bound_device_id ? (
+                                        <>
+                                          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '1rem' }}>
+                                            <strong>Telemetry OS/Model:</strong> {device.device_info || 'Unknown'} (ID: {device.bound_device_id})
+                                          </div>
 
-                                {/* Nickname */}
-                                <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <strong style={{ fontSize: '0.875rem' }}>Name:</strong>
-                                  {editingDevice?.licenseId === lic.id && editingDevice?.deviceId === device.id && editingDevice.type === 'nickname' ? (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem' }} />
-                                      <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
-                                      <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
+                                          {/* Nickname */}
+                                          <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <strong style={{ fontSize: '0.875rem' }}>Name:</strong>
+                                            {editingDevice?.licenseId === device.id && editingDevice.type === 'nickname' ? (
+                                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem' }} />
+                                                <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
+                                                <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
+                                              </div>
+                                            ) : (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span>{device.device_nickname || 'Unnamed'}</span>
+                                                <button onClick={() => { setEditingDevice({ licenseId: device.id, deviceId: 'single', type: 'nickname' }); setTempValue(device.device_nickname || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* PIN */}
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <strong style={{ fontSize: '0.875rem' }}>Node Password:</strong>
+                                            {editingDevice?.licenseId === device.id && editingDevice.type === 'pin' ? (
+                                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3" maxLength={6} style={{ padding: '0.25rem', textTransform: 'uppercase' }} />
+                                                <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
+                                                <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
+                                              </div>
+                                            ) : (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span style={{ fontFamily: 'monospace' }}>{device.device_pin ? '******' : 'Not Set'}</span>
+                                                <button onClick={() => { setEditingDevice({ licenseId: device.id, deviceId: 'single', type: 'pin' }); setTempValue(device.device_pin || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <div style={{ padding: '0.5rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.75rem', opacity: 0.7 }}>
+                                          NOT LINKED YET
+                                        </div>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <span>{device.nickname || 'Unnamed'}</span>
-                                      <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: device.id, type: 'nickname' }); setTempValue(device.nickname || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                  ))}
+                                  {mySubs.length === 0 && (
+                                    <div style={{ padding: '1rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.875rem', opacity: 0.7 }}>
+                                      NO ROLES PURCHASED
                                     </div>
                                   )}
-                                </div>
-
-                                {/* PIN */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <strong style={{ fontSize: '0.875rem' }}>Master PIN:</strong>
-                                  {editingDevice?.licenseId === lic.id && editingDevice?.deviceId === device.id && editingDevice.type === 'pin' ? (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      <input value={tempValue} onChange={e => setTempValue(e.target.value)} placeholder="e.g. 1234" style={{ padding: '0.25rem' }} />
-                                      <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
-                                      <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
-                                    </div>
-                                  ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <span style={{ fontFamily: 'monospace' }}>{device.pin ? '****' : 'Not Set'}</span>
-                                      <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: device.id, type: 'pin' }); setTempValue(device.pin || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                            {(lic.active_devices || []).length === 0 && (
-                              <div style={{ padding: '1rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.875rem', opacity: 0.7 }}>
-                                NO NODES CONNECTED
-                              </div>
-                            )}
+                                </>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
@@ -382,6 +411,29 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
+                );
+              })()
+            ) : (
+              // SUMMARY VIEW
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {masterLicenses.map(lic => (
+                  <div key={lic.id} style={{ border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem', textTransform: 'uppercase' }}>{(lic.tier || 'Tenant').replace('_', ' ')} WORKSPACE</p>
+                    <p style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 'bold', margin: '0 0 1rem 0' }}>{lic.id}</p>
+                    
+                    <div style={{ marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                      <p style={{ margin: '0 0 0.5rem 0' }}><strong>Seats:</strong> {lic.type === 'single_user' ? (lic.bound_device_id ? 1 : 0) : subNodes.filter(sn => sn.parent_id === lic.id && sn.bound_device_id).length} / {lic.max_users}</p>
+                      <p style={{ margin: 0 }}><strong>Expiry:</strong> {lic.expiry_date ? new Date(lic.expiry_date).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+
+                    <button 
+                      onClick={() => setConfigLicenseId(lic.id)}
+                      className="oru-btn" 
+                      style={{ marginTop: 'auto', width: '100%', padding: '0.5rem' }}
+                    >
+                      CONFIGURE
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -392,7 +444,7 @@ export default function Dashboard() {
         {activeTab === 'procurement' && (
           <div style={{ maxWidth: '800px' }}>
             <h2 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Procurement Center</h2>
-            <Checkout />
+            <Checkout onSuccess={() => { setActiveTab('tenants'); fetchLicenses(user!.uid); }} />
           </div>
         )}
 
