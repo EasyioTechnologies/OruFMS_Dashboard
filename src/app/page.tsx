@@ -17,6 +17,25 @@ const staggerContainer: Variants = {
 };
 
 export default function Home() {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('https://api.github.com/repos/EasyioTechnologies/OruFMC/releases/latest');
+      const data = await response.json();
+      if (data && data.assets && data.assets.length > 0) {
+        // Find the installer asset (.exe or .msix)
+        const asset = data.assets.find((a: any) => a.name.endsWith('.exe') || a.name.endsWith('.msix')) || data.assets[0];
+        window.open(asset.browser_download_url, '_blank');
+      } else {
+        // Fallback to the releases page
+        window.open('https://github.com/EasyioTechnologies/OruFMC/releases/latest', '_blank');
+      }
+    } catch (error) {
+      console.error('Failed to fetch latest release:', error);
+      window.open('https://github.com/EasyioTechnologies/OruFMC/releases/latest', '_blank');
+    }
+  };
+
   return (
     <main>
       {/* Hero Section with Parallax Background */}
@@ -63,10 +82,10 @@ export default function Home() {
               <Link href="/signup" className="oru-btn" style={{ backgroundColor: 'var(--paper)', color: 'var(--ink)' }}>
                 PROCURE LICENSE TODAY
               </Link>
-              <Link href="https://github.com/EasyioTechnologies/OruFMC/releases/download/v1.0.0/orufms_v1.0.0.msix" target="_blank" rel="noopener noreferrer" className="oru-btn oru-btn-outline" style={{ color: 'var(--paper)', borderColor: 'var(--paper)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <a href="#" onClick={handleDownload} className="oru-btn oru-btn-outline" style={{ color: 'var(--paper)', borderColor: 'var(--paper)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 DOWNLOAD FOR WINDOWS
-              </Link>
+              </a>
             </motion.div>
           </motion.div>
         </div>
@@ -160,10 +179,10 @@ export default function Home() {
             <Link href="/signup" className="oru-btn" style={{ backgroundColor: 'var(--paper)', color: 'var(--ink)', padding: '1.5rem 3rem', fontSize: '1.125rem' }}>
               CREATE CLIENT ACCOUNT
             </Link>
-            <Link href="https://github.com/EasyioTechnologies/OruFMC/releases/download/v1.0.0/orufms_v1.0.0.msix" target="_blank" rel="noopener noreferrer" className="oru-btn oru-btn-outline" style={{ color: 'var(--paper)', borderColor: 'var(--paper)', padding: '1.5rem 3rem', fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <a href="#" onClick={handleDownload} className="oru-btn oru-btn-outline" style={{ color: 'var(--paper)', borderColor: 'var(--paper)', padding: '1.5rem 3rem', fontSize: '1.125rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               DOWNLOAD FOR WINDOWS
-            </Link>
+            </a>
           </motion.div>
         </motion.div>
       </section>
