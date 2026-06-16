@@ -7,33 +7,26 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ROLES = [
-  'Manager', 'Floor Manager', 'Machine Ops', 
-  'Inventory Manager', 'Procurement Manager', 
-  'Finance', 'HR', 'Payroll'
+  'Production Manager', 
+  'Inventory Manager', 
+  'HR Manager', 
+  'Finance Manager'
 ];
 
 const ROLE_SHORTCODES: {[key: string]: string} = {
   'Admin': 'ADM',
-  'Manager': 'MGR',
-  'Floor Manager': 'FLR',
-  'Machine Ops': 'OPS',
+  'Production Manager': 'PRD',
   'Inventory Manager': 'INV',
-  'Procurement Manager': 'PRC',
-  'Finance': 'FIN',
-  'HR': 'HRX',
-  'Payroll': 'PRL'
+  'HR Manager': 'HRX',
+  'Finance Manager': 'FIN'
 };
 
 const DEFAULT_RBAC: {[key: string]: any} = {
-  'Admin': { 'Manage Orders': true, 'Manage Inventory': true, 'Manage HR': true, 'View Finance': true },
-  'Manager': { 'Manage Orders': true, 'Manage Inventory': true, 'Manage HR': false, 'View Finance': false },
-  'Floor Manager': { 'Manage Orders': true, 'Manage Inventory': false, 'Manage HR': false, 'View Finance': false },
-  'Machine Ops': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': false, 'View Finance': false },
-  'Inventory Manager': { 'Manage Orders': false, 'Manage Inventory': true, 'Manage HR': false, 'View Finance': false },
-  'Procurement Manager': { 'Manage Orders': true, 'Manage Inventory': true, 'Manage HR': false, 'View Finance': false },
-  'Finance': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': false, 'View Finance': true },
-  'HR': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': true, 'View Finance': false },
-  'Payroll': { 'Manage Orders': false, 'Manage Inventory': false, 'Manage HR': true, 'View Finance': true }
+  'Admin': { 'manage_orders': true, 'manage_inventory': true, 'manage_hr': true, 'view_finance': true },
+  'Production Manager': { 'manage_orders': true, 'manage_inventory': false, 'manage_hr': false, 'view_finance': false },
+  'Inventory Manager': { 'manage_orders': false, 'manage_inventory': true, 'manage_hr': false, 'view_finance': false },
+  'HR Manager': { 'manage_orders': false, 'manage_inventory': false, 'manage_hr': true, 'view_finance': false },
+  'Finance Manager': { 'manage_orders': false, 'manage_inventory': false, 'manage_hr': false, 'view_finance': true }
 };
 
 export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
@@ -66,10 +59,10 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
     if (licenseType === 'free_trial') return 0;
     if (licenseType === 'single_seat') return 65000;
     
-    // Multi-seat: 65,000 for Admin + 5000 per extra role seat
+    // Multi-seat: 65,000 for Admin + 10000 per extra role seat
     let total = 65000; 
     Object.values(additionalRoles).forEach(count => {
-      total += count * 5000;
+      total += count * 10000;
     });
     return total;
   };
@@ -277,7 +270,7 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
                 
                 {ROLES.map(role => (
                   <div key={role} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.875rem' }}>{role} (+₹5,000)</span>
+                    <span style={{ fontSize: '0.875rem' }}>{role} (+₹10,000)</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <button type="button" onClick={() => handleRoleCountChange(role, -1)} style={{ padding: '0.2rem 0.5rem', border: '1px solid var(--ink)' }}>-</button>
                       <span style={{ minWidth: '20px', textAlign: 'center', fontFamily: 'monospace' }}>{additionalRoles[role] || 0}</span>

@@ -72,7 +72,7 @@ function OtpInput({ value, onChange }: { value: string, onChange: (val: string) 
           <input
             key={idx}
             id={`otp-input-${idx}`}
-            type="text"
+            type="password"
             value={char}
             onChange={(e) => handleChange(e, idx)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
@@ -81,12 +81,12 @@ function OtpInput({ value, onChange }: { value: string, onChange: (val: string) 
               width: '28px',
               height: '36px',
               textAlign: 'center',
-              fontSize: '1rem',
+              fontSize: '1.25rem',
               fontWeight: 'bold',
-              fontFamily: 'monospace',
+              fontFamily: 'sans-serif',
+              padding: 0,
               border: '2px solid rgba(0,0,0,0.2)',
               borderRadius: '6px',
-              textTransform: 'uppercase',
               backgroundColor: 'var(--paper)',
               color: 'var(--ink)',
               outline: 'none',
@@ -559,8 +559,9 @@ export default function Dashboard() {
                                   </span>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                  {['Manage Orders', 'Manage Inventory', 'Manage HR', 'View Finance'].map(perm => {
+                                  {['manage_orders', 'manage_inventory', 'manage_hr', 'view_finance'].map(perm => {
                                     const isGranted = lic.rbac_controls?.[role]?.[perm] || false;
+                                    const displayLabel = perm.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                                     return (
                                       <motion.label 
                                         key={perm} 
@@ -584,7 +585,7 @@ export default function Dashboard() {
                                           onChange={() => handleToggleRbac(lic, role, perm)}
                                           style={{ display: 'none' }}
                                         />
-                                        <span style={{ fontWeight: isGranted ? 600 : 400, opacity: isGranted ? 1 : 0.7 }}>{perm}</span>
+                                        <span style={{ fontWeight: isGranted ? 600 : 400, opacity: isGranted ? 1 : 0.7 }}>{displayLabel}</span>
                                       </motion.label>
                                     );
                                   })}
