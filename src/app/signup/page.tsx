@@ -20,7 +20,7 @@ export default function Signup() {
 
   // Step 2
   const [companyName, setCompanyName] = useState('');
-  const [industry, setIndustry] = useState('woodworking');
+  const [industry, setIndustry] = useState('Woodworking');
   const [factorySize, setFactorySize] = useState('');
 
   // Step 3
@@ -115,11 +115,13 @@ export default function Signup() {
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', fontWeight: 800, marginBottom: '0.5rem', textTransform: 'uppercase', fontSize: '0.875rem' }}>Industry / Sector</label>
                 <select value={industry} onChange={e => setIndustry(e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--ink)', backgroundColor: 'var(--canvas)' }}>
-                  <option value="woodworking">Woodworking / Furniture</option>
-                  <option value="metalworking">Metalworking / Machining</option>
-                  <option value="textiles">Textiles / Garments</option>
-                  <option value="electronics">Electronics Assembly</option>
-                  <option value="other">Other</option>
+                  <option value="Woodworking">Woodworking / Furniture</option>
+                  <option value="Metalworking">Metalworking / Machining</option>
+                  <option value="Textiles">Textiles / Garments</option>
+                  <option value="Plastics">Plastics / Molding</option>
+                  <option value="Electronics">Electronics Assembly</option>
+                  <option value="3D Printing">3D Print Farm</option>
+                  <option value="Generic">Other / Generic</option>
                 </select>
               </div>
               <div style={{ marginBottom: '2rem' }}>

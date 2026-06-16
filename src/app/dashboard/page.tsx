@@ -64,6 +64,19 @@ function OtpInput({ value, onChange }: { value: string, onChange: (val: string) 
     firstInput?.focus();
   }, []);
 
+  useEffect(() => {
+    document.body.style.height = '100vh';
+    document.body.style.overflow = 'hidden';
+    document.body.style.display = 'flex';
+    document.body.style.flexDirection = 'column';
+    return () => {
+      document.body.style.height = '';
+      document.body.style.overflow = '';
+      document.body.style.display = '';
+      document.body.style.flexDirection = '';
+    };
+  }, []);
+
   return (
     <div style={{ display: 'flex', gap: '0.25rem' }}>
       {[0, 1, 2, 3, 4, 5].map((idx) => {
@@ -247,10 +260,10 @@ export default function Dashboard() {
   if (loading) return <div style={{ padding: '6rem', textAlign: 'center' }}>LOADING DASHBOARD...</div>;
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex' }}>
+    <main style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
       
       {/* Sidebar */}
-      <aside style={{ width: '250px', borderRight: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column' }}>
+      <aside style={{ width: '250px', flexShrink: 0, borderRight: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <div style={{ padding: '2rem', borderBottom: '2px solid var(--ink)' }}>
           <h1 style={{ fontSize: '1.25rem', marginBottom: 0 }}>DASHBOARD</h1>
           <p style={{ fontSize: '0.75rem', opacity: 0.7, wordBreak: 'break-all' }}>{user?.email}</p>
@@ -559,7 +572,7 @@ export default function Dashboard() {
                                   </span>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                  {['manage_orders', 'manage_inventory', 'manage_hr', 'view_finance'].map(perm => {
+                                  {['pos', 'orders', 'tracking', 'client_tracking', 'machines', 'bom', 'labor', 'inventory', 'suppliers', 'employees', 'attendance', 'payroll', 'analytics', 'settings'].map(perm => {
                                     const isGranted = lic.rbac_controls?.[role]?.[perm] || false;
                                     const displayLabel = perm.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                                     return (

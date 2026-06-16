@@ -36,9 +36,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', margin: 0 }}>
         <Navbar />
-        {children}
+        <div id="root-content-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {children}
+        </div>
         <Footer />
       </body>
     </html>
