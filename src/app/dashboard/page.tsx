@@ -8,6 +8,99 @@ import { auth, db } from '../../lib/firebase';
 import Checkout from '../../components/Checkout';
 import { motion, AnimatePresence } from 'framer-motion';
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button 
+      onClick={handleCopy} 
+      title="Copy to clipboard"
+      style={{ 
+        background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', padding: '0.3rem', borderRadius: '4px',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'all 0.2s', color: copied ? '#4CAF50' : 'inherit'
+      }}
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      )}
+    </button>
+  );
+}
+
+function OtpInput({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    let val = e.target.value.toUpperCase();
+    if (val.length > 1) val = val.slice(val.length - 1);
+    
+    if (val && !/^[A-Z0-9]$/.test(val)) return;
+
+    let newValue = value.padEnd(6, ' ').split('');
+    newValue[index] = val || ' ';
+    const finalValue = newValue.join('');
+    onChange(finalValue);
+
+    if (val && index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Backspace' && (!value[index] || value[index] === ' ') && index > 0) {
+      const prevInput = document.getElementById(`otp-input-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  useEffect(() => {
+    const firstInput = document.getElementById('otp-input-0');
+    firstInput?.focus();
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', gap: '0.25rem' }}>
+      {[0, 1, 2, 3, 4, 5].map((idx) => {
+        const char = value[idx] && value[idx] !== ' ' ? value[idx] : '';
+        return (
+          <input
+            key={idx}
+            id={`otp-input-${idx}`}
+            type="text"
+            value={char}
+            onChange={(e) => handleChange(e, idx)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
+            maxLength={1}
+            style={{
+              width: '28px',
+              height: '36px',
+              textAlign: 'center',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              fontFamily: 'monospace',
+              border: '2px solid rgba(0,0,0,0.2)',
+              borderRadius: '6px',
+              textTransform: 'uppercase',
+              backgroundColor: 'var(--paper)',
+              color: 'var(--ink)',
+              outline: 'none',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--ink)'}
+            onBlur={(e) => e.target.style.borderColor = 'rgba(0,0,0,0.2)'}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -231,7 +324,10 @@ export default function Dashboard() {
                     <div style={{ padding: '2rem', background: 'linear-gradient(135deg, var(--ink) 0%, #333 100%)', color: 'var(--paper)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem', letterSpacing: '1px' }}>TENANT ID</p>
-                        <p style={{ fontFamily: 'monospace', fontSize: '1.5rem', fontWeight: 'bold', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{lic.id}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <p style={{ fontFamily: 'monospace', fontSize: '1.5rem', fontWeight: 'bold', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{lic.id}</p>
+                          <CopyButton text={lic.id} />
+                        </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem', letterSpacing: '1px' }}>EXPIRY</p>
@@ -292,9 +388,9 @@ export default function Dashboard() {
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Password</strong>
                                     {editingDevice?.licenseId === lic.id && editingDevice.type === 'pin' ? (
-                                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3" maxLength={6} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase' }} autoFocus />
-                                        <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
+                                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <OtpInput value={tempValue} onChange={setTempValue} />
+                                        <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 0.75rem', cursor: 'pointer' }}>SAVE</button>
                                         <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>CANCEL</button>
                                       </div>
                                     ) : (
@@ -361,7 +457,10 @@ export default function Dashboard() {
                                                 </span>
                                                 <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Seat {device.seat_index}</span>
                                               </div>
-                                              <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600 }}>{device.id}</span>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600 }}>{device.id}</span>
+                                                <CopyButton text={device.id} />
+                                              </div>
                                             </div>
                                             {device.bound_device_id && (
                                               <button onClick={() => handleRevokeSingle(device.id)} style={{ padding: '0.5rem', fontSize: '0.75rem', color: '#d32f2f', backgroundColor: 'transparent', border: '1px solid rgba(211,47,47,0.3)', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>REVOKE</button>
@@ -397,9 +496,9 @@ export default function Dashboard() {
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                   <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Password</strong>
                                                   {editingDevice?.licenseId === device.id && editingDevice.type === 'pin' ? (
-                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                      <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="A1B2C3" maxLength={6} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase', width: '80px' }} autoFocus />
-                                                      <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                      <OtpInput value={tempValue} onChange={setTempValue} />
+                                                      <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 0.75rem', cursor: 'pointer' }}>SAVE</button>
                                                       <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>X</button>
                                                     </div>
                                                   ) : (
@@ -505,7 +604,10 @@ export default function Dashboard() {
                 {masterLicenses.map(lic => (
                   <div key={lic.id} style={{ border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
                     <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem', textTransform: 'uppercase' }}>{(lic.tier || 'Tenant').replace('_', ' ')} WORKSPACE</p>
-                    <p style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 'bold', margin: '0 0 1rem 0' }}>{lic.id}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <p style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>{lic.id}</p>
+                      <CopyButton text={lic.id} />
+                    </div>
                     
                     <div style={{ marginBottom: '1.5rem', fontSize: '0.875rem' }}>
                       <p style={{ margin: '0 0 0.5rem 0' }}><strong>Seats:</strong> {lic.type === 'single_user' ? (lic.bound_device_id ? 1 : 0) : subNodes.filter(sn => sn.parent_id === lic.id && sn.bound_device_id).length} / {lic.max_users}</p>
