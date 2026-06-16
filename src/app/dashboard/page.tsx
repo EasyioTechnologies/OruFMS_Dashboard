@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 import Checkout from '../../components/Checkout';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -218,154 +219,211 @@ export default function Dashboard() {
                 const lic = masterLicenses.find(l => l.id === configLicenseId);
                 if (!lic) return <div>License not found.</div>;
                 return (
-                  <div style={{ border: '2px solid var(--ink)', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column' }}>
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', backgroundColor: 'var(--paper)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.05)' }}
+                  >
                     
                     {/* Header */}
-                    <div style={{ padding: '1.5rem', borderBottom: '2px solid var(--ink)', backgroundColor: 'var(--ink)', color: 'var(--paper)', display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ padding: '2rem', background: 'linear-gradient(135deg, var(--ink) 0%, #333 100%)', color: 'var(--paper)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem' }}>TENANT ID</p>
-                        <p style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>{lic.id}</p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem', letterSpacing: '1px' }}>TENANT ID</p>
+                        <p style={{ fontFamily: 'monospace', fontSize: '1.5rem', fontWeight: 'bold', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{lic.id}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem' }}>EXPIRY</p>
-                        <p style={{ margin: 0, fontWeight: 'bold' }}>
-                          {lic.expiry_date ? new Date(lic.expiry_date).toLocaleDateString() : 'N/A'}
-                        </p>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem', letterSpacing: '1px' }}>EXPIRY</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4CAF50', boxShadow: '0 0 10px #4CAF50' }}></span>
+                          <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1.125rem' }}>
+                            {lic.expiry_date ? new Date(lic.expiry_date).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                       {/* Left Column: Nodes & Telemetry */}
-                      <div style={{ flex: 1, padding: '1.5rem', borderRight: '2px solid var(--ink)' }}>
-                        <h4 style={{ fontWeight: 800, fontSize: '0.875rem', marginBottom: '1.5rem', textTransform: 'uppercase' }}>Connected Nodes</h4>
+                      <div style={{ flex: '1 1 50%', padding: '2rem', borderRight: '1px solid rgba(0,0,0,0.05)', backgroundColor: 'var(--canvas)' }}>
+                        <h4 style={{ fontWeight: 800, fontSize: '0.875rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--ink)' }}>
+                          <span style={{ borderBottom: '2px solid var(--ink)', paddingBottom: '0.25rem' }}>Connected Nodes</span>
+                        </h4>
                         
                         {lic.type === 'single_user' ? (
-                          <div>
+                          <motion.div layout>
                             {lic.bound_device_id ? (
-                              <div style={{ padding: '1rem', border: '1px solid var(--ink)', backgroundColor: 'var(--canvas)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                              <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                style={{ padding: '1.5rem', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', backgroundColor: 'var(--paper)', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
                                   <div>
-                                    <strong style={{ fontSize: '0.875rem' }}>Device ID:</strong><br/>
-                                    <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{lic.bound_device_id}</span>
+                                    <strong style={{ fontSize: '0.75rem', textTransform: 'uppercase', opacity: 0.7 }}>Device ID</strong><br/>
+                                    <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600 }}>{lic.bound_device_id}</span>
                                   </div>
-                                  <button onClick={() => handleRevokeSingle(lic.id)} className="oru-btn oru-btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'red' }}>REVOKE</button>
+                                  <button onClick={() => handleRevokeSingle(lic.id)} style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', color: '#d32f2f', backgroundColor: 'rgba(211,47,47,0.1)', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>REVOKE</button>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '1rem' }}>
-                                  <strong>Telemetry OS/Model:</strong> {lic.device_info || 'Unknown'}
+                                <div style={{ fontSize: '0.875rem', marginBottom: '1.5rem', padding: '0.75rem', backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: '4px' }}>
+                                  <strong style={{ opacity: 0.7 }}>Telemetry:</strong> <span style={{ fontWeight: 500 }}>{lic.device_info || 'Unknown OS/Model'}</span>
                                 </div>
                                 
-                                {/* Nickname */}
-                                <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <strong style={{ fontSize: '0.875rem' }}>Name:</strong>
-                                  {editingDevice?.licenseId === lic.id && editingDevice.type === 'nickname' ? (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem' }} />
-                                      <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
-                                      <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
-                                    </div>
-                                  ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <span>{lic.device_nickname || 'Unnamed'}</span>
-                                      <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: 'single', type: 'nickname' }); setTempValue(lic.device_nickname || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
-                                    </div>
-                                  )}
-                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                  {/* Nickname */}
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px dashed rgba(0,0,0,0.1)' }}>
+                                    <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Name</strong>
+                                    {editingDevice?.licenseId === lic.id && editingDevice.type === 'nickname' ? (
+                                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px' }} autoFocus />
+                                        <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
+                                        <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>CANCEL</button>
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <span style={{ fontWeight: 600 }}>{lic.device_nickname || 'Unnamed Node'}</span>
+                                        <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: 'single', type: 'nickname' }); setTempValue(lic.device_nickname || ''); }} style={{ fontSize: '0.75rem', color: 'var(--ink)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                      </div>
+                                    )}
+                                  </div>
 
-                                {/* PIN */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <strong style={{ fontSize: '0.875rem' }}>Node Password:</strong>
-                                  {editingDevice?.licenseId === lic.id && editingDevice.type === 'pin' ? (
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                      <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3" maxLength={6} style={{ padding: '0.25rem', textTransform: 'uppercase' }} />
-                                      <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
-                                      <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
-                                    </div>
-                                  ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <span style={{ fontFamily: 'monospace' }}>{lic.device_pin ? '******' : 'Not Set'}</span>
-                                      <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: 'single', type: 'pin' }); setTempValue(lic.device_pin || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
-                                    </div>
-                                  )}
+                                  {/* PIN */}
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Password</strong>
+                                    {editingDevice?.licenseId === lic.id && editingDevice.type === 'pin' ? (
+                                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3" maxLength={6} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase' }} autoFocus />
+                                        <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
+                                        <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>CANCEL</button>
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <span style={{ fontFamily: 'monospace', fontSize: '1.2rem', letterSpacing: '2px', color: lic.device_pin ? 'var(--ink)' : 'red' }}>{lic.device_pin ? '******' : 'NOT SET'}</span>
+                                        <button onClick={() => { setEditingDevice({ licenseId: lic.id, deviceId: 'single', type: 'pin' }); setTempValue(lic.device_pin || ''); }} style={{ fontSize: '0.75rem', color: 'var(--ink)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
+                              </motion.div>
                             ) : (
-                              <div style={{ padding: '1rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.875rem', opacity: 0.7 }}>
-                                NOT LINKED YET
-                              </div>
+                              <motion.div 
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                style={{ padding: '2rem', border: '2px dashed rgba(0,0,0,0.1)', borderRadius: '8px', textAlign: 'center', backgroundColor: 'var(--paper)' }}
+                              >
+                                <div style={{ width: '48px', height: '48px', margin: '0 auto 1rem', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                </div>
+                                <p style={{ fontWeight: 600, opacity: 0.7, margin: 0 }}>WAITING FOR ACTIVATION</p>
+                                <p style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.5rem' }}>Enter the Tenant ID on your hardware node to link it.</p>
+                              </motion.div>
                             )}
-                          </div>
+                          </motion.div>
                         ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             {(() => {
                               const mySubs = subNodes.filter(sn => sn.parent_id === lic.id).sort((a,b) => a.role.localeCompare(b.role) || a.seat_index - b.seat_index);
                               const usedSeats = mySubs.filter(sn => sn.bound_device_id).length;
                               return (
                                 <>
-                                  <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                                    SEATS UTILIZED: {usedSeats} / {lic.max_users}
-                                  </div>
-                                  {mySubs.map((device: any, index: number) => (
-                                    <div key={index} style={{ padding: '1rem', border: '1px solid var(--ink)', backgroundColor: 'var(--canvas)' }}>
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                        <div>
-                                          <strong style={{ fontSize: '0.875rem' }}>Sub-License Key ({device.role} Seat {device.seat_index}):</strong><br/>
-                                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 'bold' }}>{device.id}</span>
-                                        </div>
-                                        {device.bound_device_id && (
-                                          <button onClick={() => handleRevokeSingle(device.id)} className="oru-btn oru-btn-outline" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: 'red' }}>REVOKE</button>
-                                        )}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 600, opacity: 0.8 }}>WORKSPACE CAPACITY</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                      <div style={{ width: '100px', height: '8px', backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <motion.div 
+                                          initial={{ width: 0 }} 
+                                          animate={{ width: `${(usedSeats / lic.max_users) * 100}%` }} 
+                                          style={{ height: '100%', backgroundColor: usedSeats === lic.max_users ? '#4CAF50' : 'var(--ink)' }}
+                                        />
                                       </div>
-                                      
-                                      {device.bound_device_id ? (
-                                        <>
-                                          <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '1rem' }}>
-                                            <strong>Telemetry OS/Model:</strong> {device.device_info || 'Unknown'} (ID: {device.bound_device_id})
-                                          </div>
-
-                                          {/* Nickname */}
-                                          <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <strong style={{ fontSize: '0.875rem' }}>Name:</strong>
-                                            {editingDevice?.licenseId === device.id && editingDevice.type === 'nickname' ? (
-                                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem' }} />
-                                                <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
-                                                <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
-                                              </div>
-                                            ) : (
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span>{device.device_nickname || 'Unnamed'}</span>
-                                                <button onClick={() => { setEditingDevice({ licenseId: device.id, deviceId: 'single', type: 'nickname' }); setTempValue(device.device_nickname || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
-                                              </div>
-                                            )}
-                                          </div>
-
-                                          {/* PIN */}
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <strong style={{ fontSize: '0.875rem' }}>Node Password:</strong>
-                                            {editingDevice?.licenseId === device.id && editingDevice.type === 'pin' ? (
-                                              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3" maxLength={6} style={{ padding: '0.25rem', textTransform: 'uppercase' }} />
-                                                <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>SAVE</button>
-                                                <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem' }}>CANCEL</button>
-                                              </div>
-                                            ) : (
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span style={{ fontFamily: 'monospace' }}>{device.device_pin ? '******' : 'Not Set'}</span>
-                                                <button onClick={() => { setEditingDevice({ licenseId: device.id, deviceId: 'single', type: 'pin' }); setTempValue(device.device_pin || ''); }} style={{ fontSize: '0.75rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </>
-                                      ) : (
-                                        <div style={{ padding: '0.5rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.75rem', opacity: 0.7 }}>
-                                          NOT LINKED YET
-                                        </div>
-                                      )}
+                                      <span style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>{usedSeats} <span style={{ opacity: 0.5, fontSize: '0.875rem' }}>/ {lic.max_users}</span></span>
                                     </div>
-                                  ))}
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <AnimatePresence>
+                                      {mySubs.map((device: any, index: number) => (
+                                        <motion.div 
+                                          key={device.id}
+                                          initial={{ opacity: 0, y: 10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ delay: index * 0.05 }}
+                                          style={{ padding: '1.5rem', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', backgroundColor: 'var(--paper)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', position: 'relative', overflow: 'hidden' }}
+                                        >
+                                          {/* Role Badge Accent */}
+                                          <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', backgroundColor: device.bound_device_id ? '#4CAF50' : '#ccc' }} />
+                                          
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', paddingLeft: '0.5rem' }}>
+                                            <div>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                                <span style={{ padding: '0.25rem 0.5rem', backgroundColor: 'var(--ink)', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', borderRadius: '4px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                                                  {device.role}
+                                                </span>
+                                                <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Seat {device.seat_index}</span>
+                                              </div>
+                                              <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600 }}>{device.id}</span>
+                                            </div>
+                                            {device.bound_device_id && (
+                                              <button onClick={() => handleRevokeSingle(device.id)} style={{ padding: '0.5rem', fontSize: '0.75rem', color: '#d32f2f', backgroundColor: 'transparent', border: '1px solid rgba(211,47,47,0.3)', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>REVOKE</button>
+                                            )}
+                                          </div>
+                                          
+                                          <div style={{ paddingLeft: '0.5rem' }}>
+                                            {device.bound_device_id ? (
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                <div style={{ fontSize: '0.875rem', padding: '0.5rem', backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                                                  <span style={{ opacity: 0.7 }}>Telemetry:</span>
+                                                  <span style={{ fontWeight: 500 }}>{device.device_info || 'Unknown'}</span>
+                                                </div>
+
+                                                {/* Nickname */}
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                  <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Name</strong>
+                                                  {editingDevice?.licenseId === device.id && editingDevice.type === 'nickname' ? (
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                      <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px', width: '120px' }} autoFocus />
+                                                      <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
+                                                      <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>X</button>
+                                                    </div>
+                                                  ) : (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                      <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{device.device_nickname || 'Unnamed'}</span>
+                                                      <button onClick={() => { setEditingDevice({ licenseId: device.id, deviceId: 'single', type: 'nickname' }); setTempValue(device.device_nickname || ''); }} style={{ fontSize: '0.75rem', color: 'var(--ink)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                                    </div>
+                                                  )}
+                                                </div>
+
+                                                {/* PIN */}
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                  <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Password</strong>
+                                                  {editingDevice?.licenseId === device.id && editingDevice.type === 'pin' ? (
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                      <input value={tempValue} onChange={e => setTempValue(e.target.value.toUpperCase())} placeholder="A1B2C3" maxLength={6} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase', width: '80px' }} autoFocus />
+                                                      <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
+                                                      <button onClick={() => setEditingDevice(null)} style={{ fontSize: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>X</button>
+                                                    </div>
+                                                  ) : (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                      <span style={{ fontFamily: 'monospace', fontSize: '1rem', letterSpacing: '2px', color: device.device_pin ? 'var(--ink)' : 'red' }}>{device.device_pin ? '******' : 'NOT SET'}</span>
+                                                      <button onClick={() => { setEditingDevice({ licenseId: device.id, deviceId: 'single', type: 'pin' }); setTempValue(device.device_pin || ''); }} style={{ fontSize: '0.75rem', color: 'var(--ink)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div style={{ padding: '1rem', border: '1px dashed rgba(0,0,0,0.1)', borderRadius: '4px', textAlign: 'center', fontSize: '0.75rem', opacity: 0.5, fontWeight: 600 }}>
+                                                AWAITING DEVICE ACTIVATION
+                                              </div>
+                                            )}
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                    </AnimatePresence>
+                                  </div>
+                                  
                                   {mySubs.length === 0 && (
-                                    <div style={{ padding: '1rem', border: '1px dashed var(--ink)', textAlign: 'center', fontSize: '0.875rem', opacity: 0.7 }}>
-                                      NO ROLES PURCHASED
+                                    <div style={{ padding: '2rem', border: '2px dashed rgba(0,0,0,0.1)', borderRadius: '8px', textAlign: 'center', opacity: 0.5 }}>
+                                      No roles purchased.
                                     </div>
                                   )}
                                 </>
@@ -376,41 +434,69 @@ export default function Dashboard() {
                       </div>
 
                       {/* Right Column: RBAC Controls */}
-                      <div style={{ flex: 1, padding: '1.5rem' }}>
-                        <h4 style={{ fontWeight: 800, fontSize: '0.875rem', marginBottom: '1.5rem', textTransform: 'uppercase' }}>RBAC Configurations</h4>
+                      <div style={{ flex: '1 1 50%', padding: '2rem', backgroundColor: 'var(--paper)' }}>
+                        <h4 style={{ fontWeight: 800, fontSize: '0.875rem', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--ink)' }}>
+                          <span style={{ borderBottom: '2px solid var(--ink)', paddingBottom: '0.25rem' }}>RBAC Protocols</span>
+                        </h4>
+                        
                         {Object.keys(lic.allowed_roles || {}).length === 0 ? (
-                          <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>No roles purchased or found.</div>
+                          <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5, border: '1px dashed rgba(0,0,0,0.1)', borderRadius: '8px' }}>
+                            No roles defined for this workspace.
+                          </div>
                         ) : (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            {Object.keys(lic.allowed_roles).map(role => (
-                              <div key={role} style={{ padding: '1rem', border: '1px solid var(--ink)', backgroundColor: 'var(--canvas)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--ink)', paddingBottom: '0.5rem' }}>
-                                  <h5 style={{ margin: 0, fontWeight: 800, fontSize: '1rem' }}>{role}</h5>
-                                  <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{lic.allowed_roles[role]} Seat(s)</span>
+                            {Object.keys(lic.allowed_roles).map((role, idx) => (
+                              <motion.div 
+                                key={role} 
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                style={{ padding: '1.5rem', border: '1px solid rgba(0,0,0,0.05)', borderRadius: '8px', backgroundColor: 'var(--canvas)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.75rem' }}>
+                                  <h5 style={{ margin: 0, fontWeight: 800, fontSize: '1.125rem' }}>{role}</h5>
+                                  <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '12px', fontWeight: 600 }}>
+                                    {lic.allowed_roles[role]} Seat(s)
+                                  </span>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                   {['Manage Orders', 'Manage Inventory', 'Manage HR', 'View Finance'].map(perm => {
                                     const isGranted = lic.rbac_controls?.[role]?.[perm] || false;
                                     return (
-                                      <label key={perm} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                                      <motion.label 
+                                        key={perm} 
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        style={{ 
+                                          display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem', cursor: 'pointer',
+                                          padding: '0.75rem', borderRadius: '6px',
+                                          backgroundColor: isGranted ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0,0,0,0.02)',
+                                          border: `1px solid ${isGranted ? 'rgba(76, 175, 80, 0.3)' : 'transparent'}`,
+                                          transition: 'all 0.2s'
+                                        }}
+                                      >
+                                        <div style={{ position: 'relative', width: '36px', height: '20px', borderRadius: '10px', backgroundColor: isGranted ? '#4CAF50' : '#ccc', transition: 'background-color 0.3s' }}>
+                                          <div style={{ position: 'absolute', top: '2px', left: isGranted ? '18px' : '2px', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'white', transition: 'left 0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                                        </div>
+                                        {/* Hidden real checkbox */}
                                         <input 
                                           type="checkbox" 
                                           checked={isGranted} 
                                           onChange={() => handleToggleRbac(lic, role, perm)}
-                                          style={{ accentColor: 'var(--ink)' }}
+                                          style={{ display: 'none' }}
                                         />
-                                        {perm}
-                                      </label>
+                                        <span style={{ fontWeight: isGranted ? 600 : 400, opacity: isGranted ? 1 : 0.7 }}>{perm}</span>
+                                      </motion.label>
                                     );
                                   })}
                                 </div>
-                              </div>
+                              </motion.div>
                             ))}
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })()
             ) : (
