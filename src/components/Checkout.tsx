@@ -64,12 +64,12 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
 
   const calculateTotal = () => {
     if (licenseType === 'free_trial') return 0;
-    if (licenseType === 'single_seat') return 65000;
+    if (licenseType === 'single_seat') return 799;
     
-    // Multi-seat: 65,000 for Admin + 5000 per extra role seat
-    let total = 65000; 
+    // Multi-seat: 799 for Admin + 59 per extra role seat
+    let total = 799; 
     Object.values(additionalRoles).forEach(count => {
-      total += count * 5000;
+      total += count * 59;
     });
     return total;
   };
@@ -208,7 +208,7 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
         await setDoc(doc(db, 'transactions', transactionId), {
           owner_uid: user.uid,
           amount: amount,
-          currency: 'INR',
+          currency: 'USD',
           description: `Tenant Workspace License (${licenseType.replace('_', ' ').toUpperCase()})`,
           license_id: newKey,
           created_at: serverTimestamp()
@@ -262,7 +262,7 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
                 disabled={loading}
               >
                 <option value="free_trial">FREE TRIAL (30 Days)</option>
-                <option value="single_seat">SINGLE SEAT ADMIN - ₹65,000 INR (15 Years)</option>
+                <option value="single_seat">SINGLE SEAT ADMIN - $799 USD (15 Years)</option>
                 <option value="multi_seat">MULTI-SEAT BUILDER (Custom Roles, 15 Years)</option>
               </select>
             </div>
@@ -272,12 +272,12 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
                 <p style={{ fontWeight: 800, marginBottom: '1rem', fontSize: '0.875rem' }}>BUILD YOUR WORKSPACE</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ink)' }}>
                   <span>Admin Seat (Mandatory)</span>
-                  <span style={{ fontWeight: 'bold' }}>₹65,000</span>
+                  <span style={{ fontWeight: 'bold' }}>$799</span>
                 </div>
                 
                 {ROLES.map(role => (
                   <div key={role} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.875rem' }}>{role} (+₹5,000)</span>
+                    <span style={{ fontSize: '0.875rem' }}>{role} (+$59)</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <button type="button" onClick={() => handleRoleCountChange(role, -1)} style={{ padding: '0.2rem 0.5rem', border: '1px solid var(--ink)' }}>-</button>
                       <span style={{ minWidth: '20px', textAlign: 'center', fontFamily: 'monospace' }}>{additionalRoles[role] || 0}</span>
@@ -292,7 +292,7 @@ export default function Checkout({ onSuccess }: { onSuccess?: () => void }) {
               <div>
                 <p style={{ fontSize: '0.75rem', fontWeight: 800, opacity: 0.7, marginBottom: '0.25rem' }}>TOTAL AMOUNT</p>
                 <h4 style={{ margin: 0, fontSize: '2rem', fontFamily: 'var(--font-serif)' }}>
-                  ₹{calculateTotal().toLocaleString('en-IN')}
+                  ${calculateTotal().toLocaleString('en-US')}
                 </h4>
               </div>
               <div style={{ textAlign: 'right' }}>

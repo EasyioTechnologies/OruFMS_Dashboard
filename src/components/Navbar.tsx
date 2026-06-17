@@ -33,6 +33,8 @@ export default function Navbar() {
         Oru FMS
       </Link>
       <div style={{ display: 'flex', gap: '0.5rem', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', alignItems: 'stretch' }}>
+        <Link href="/about" style={navLinkStyle}>About</Link>
+        <Link href="/use-cases" style={navLinkStyle}>Use Cases</Link>
         <Link href="/pricing" style={navLinkStyle}>Pricing</Link>
         <Link href="/contact" style={navLinkStyle}>Contact</Link>
         
@@ -45,7 +47,7 @@ export default function Navbar() {
           <>
             <Link href="/login" style={navLinkStyle}>Login</Link>
             <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '0.5rem' }}>
-              <Link href="/signup" style={{ border: '2px solid var(--ink)', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center' }}>Sign Up</Link>
+              <Link href="/signup" style={{ border: '2px solid var(--ink)', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', height: 'auto' }}>Sign Up</Link>
             </div>
           </>
         )}
