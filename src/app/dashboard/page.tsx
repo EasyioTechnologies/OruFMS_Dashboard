@@ -152,7 +152,7 @@ export default function Dashboard() {
       const masters: any[] = [];
       const subs: any[] = [];
       querySnapshot.forEach((doc) => {
-        const data = { id: doc.id, ...doc.data() };
+        const data: any = { id: doc.id, ...doc.data() };
         if (data.type === 'sub_node') subs.push(data);
         else masters.push(data);
       });
