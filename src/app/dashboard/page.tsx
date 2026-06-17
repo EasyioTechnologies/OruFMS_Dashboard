@@ -383,7 +383,7 @@ export default function Dashboard() {
                                   {/* Nickname */}
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.5rem', borderBottom: '1px dashed rgba(0,0,0,0.1)' }}>
                                     <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Name</strong>
-                                    {editingDevice?.licenseId === lic.id && editingDevice.type === 'nickname' ? (
+                                    {editingDevice?.licenseId === lic.id && editingDevice?.type === 'nickname' ? (
                                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px' }} autoFocus />
                                         <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
@@ -400,7 +400,7 @@ export default function Dashboard() {
                                   {/* PIN */}
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Password</strong>
-                                    {editingDevice?.licenseId === lic.id && editingDevice.type === 'pin' ? (
+                                    {editingDevice?.licenseId === lic.id && editingDevice?.type === 'pin' ? (
                                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                         <OtpInput value={tempValue} onChange={setTempValue} />
                                         <button onClick={() => handleSaveDeviceDetails(lic)} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 0.75rem', cursor: 'pointer' }}>SAVE</button>
@@ -491,7 +491,7 @@ export default function Dashboard() {
                                                 {/* Nickname */}
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                   <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Name</strong>
-                                                  {editingDevice?.licenseId === device.id && editingDevice.type === 'nickname' ? (
+                                                  {editingDevice?.licenseId === device.id && editingDevice?.type === 'nickname' ? (
                                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                       <input value={tempValue} onChange={e => setTempValue(e.target.value)} style={{ padding: '0.25rem 0.5rem', border: '1px solid #ccc', borderRadius: '4px', width: '120px' }} autoFocus />
                                                       <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0 0.5rem', cursor: 'pointer' }}>SAVE</button>
@@ -508,7 +508,7 @@ export default function Dashboard() {
                                                 {/* PIN */}
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                   <strong style={{ fontSize: '0.875rem', opacity: 0.8 }}>Node Password</strong>
-                                                  {editingDevice?.licenseId === device.id && editingDevice.type === 'pin' ? (
+                                                  {editingDevice?.licenseId === device.id && editingDevice?.type === 'pin' ? (
                                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                                       <OtpInput value={tempValue} onChange={setTempValue} />
                                                       <button onClick={() => handleSaveDeviceDetails({ id: device.id, type: 'single_user' })} style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--ink)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 0.75rem', cursor: 'pointer' }}>SAVE</button>
