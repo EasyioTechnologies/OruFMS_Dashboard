@@ -19,24 +19,34 @@ export default function Navbar() {
     await signOut(auth);
   };
 
+  const navLinkStyle = {
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0 1rem',
+    height: '100%',
+  };
+
   return (
-    <nav style={{ padding: '1.5rem 2rem', borderBottom: '2px solid var(--ink)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--canvas)' }}>
-      <Link href="/" style={{ fontWeight: 900, fontFamily: 'var(--font-serif)', fontSize: '1.5rem', letterSpacing: '-0.02em', border: 'none' }}>
+    <nav style={{ padding: '0 2rem', height: '5rem', borderBottom: '2px solid var(--ink)', display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', backgroundColor: 'var(--canvas)' }}>
+      <Link href="/" style={{ fontWeight: 900, fontFamily: 'var(--font-serif)', fontSize: '1.5rem', letterSpacing: '-0.02em', border: 'none', display: 'flex', alignItems: 'center' }}>
         Oru FMS
       </Link>
-      <div style={{ display: 'flex', gap: '2rem', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', alignItems: 'center' }}>
-        <Link href="/pricing" style={{ border: 'none' }}>Pricing</Link>
-        <Link href="/contact" style={{ border: 'none' }}>Contact</Link>
+      <div style={{ display: 'flex', gap: '0.5rem', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', alignItems: 'stretch' }}>
+        <Link href="/pricing" style={navLinkStyle}>Pricing</Link>
+        <Link href="/contact" style={navLinkStyle}>Contact</Link>
         
         {user ? (
           <>
-            <Link href="/dashboard" style={{ border: 'none', color: 'var(--paper)', backgroundColor: 'var(--ink)', padding: '0.5rem 1rem' }}>Dashboard</Link>
-            <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', padding: 0 }}>Logout</button>
+            <Link href="/dashboard" style={{ ...navLinkStyle, color: 'var(--paper)', backgroundColor: 'var(--ink)' }}>Dashboard</Link>
+            <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', textTransform: 'uppercase', padding: '0 1rem', display: 'flex', alignItems: 'center', height: '100%' }}>Logout</button>
           </>
         ) : (
           <>
-            <Link href="/login" style={{ border: 'none' }}>Login</Link>
-            <Link href="/signup" style={{ border: '2px solid var(--ink)', padding: '0.5rem 1rem' }}>Sign Up</Link>
+            <Link href="/login" style={navLinkStyle}>Login</Link>
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '0.5rem' }}>
+              <Link href="/signup" style={{ border: '2px solid var(--ink)', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center' }}>Sign Up</Link>
+            </div>
           </>
         )}
       </div>
