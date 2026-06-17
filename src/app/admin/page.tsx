@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, getDocs, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
 
 export default function AdminDashboard() {
@@ -15,12 +15,24 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         router.push('/admin/login');
       } else {
-        setUser(currentUser);
-        fetchData();
+        try {
+          const adminDoc = await getDoc(doc(db, "platform_admins", currentUser.uid));
+          if (!adminDoc.exists()) {
+            alert("SECURITY BREACH: Unauthorized access attempt logged. Your account does not have Super Admin privileges.");
+            await signOut(auth);
+            router.push('/admin/login');
+            return;
+          }
+          setUser(currentUser);
+          fetchData();
+        } catch (err) {
+          console.error("Failed to verify admin status", err);
+          router.push('/admin/login');
+        }
       }
     });
     return () => unsubscribe();
@@ -49,6 +61,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const logAuditAction = async (action: string, details: any) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, "platform_audits"), {
+        admin_uid: user.uid,
+        admin_email: user.email,
+        action,
+        details,
+        timestamp: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Failed to log audit action", err);
+    }
+  };
+
   const handleUpdateVersion = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -57,6 +84,7 @@ export default function AdminDashboard() {
         changelog: "Mandatory system update deployed via Super Admin.",
         downloadUrl: "https://orufms.com/download"
       }, { merge: true });
+      await logAuditAction('UPDATE_VERSION', { from: currentVersion, to: targetVersion });
       setCurrentVersion(targetVersion);
       alert("Version updated successfully. Clients will be forced to update.");
     } catch (err) {
@@ -71,10 +99,37 @@ export default function AdminDashboard() {
       await updateDoc(doc(db, "licenses", licenseId), {
         status: 'revoked'
       });
+      await logAuditAction('REVOKE_LICENSE', { licenseId });
       fetchData();
     } catch (err) {
       console.error(err);
       alert("Failed to revoke license.");
+    }
+  };
+
+  const handleRemoteWipe = async (license: any, deviceId: string) => {
+    if (!confirm("Are you sure you want to issue a KILL SWITCH command to this node? All local data will be permanently wiped upon next sync.")) return;
+    try {
+      if (license.type === 'single_user') {
+        await updateDoc(doc(db, "licenses", license.id), {
+          remote_wipe_pending: true
+        });
+      } else {
+        const updatedDevices = (license.active_devices || []).map((d: any) => {
+          if (d.id === deviceId) {
+            return { ...d, remote_wipe_pending: true };
+          }
+          return d;
+        });
+        await updateDoc(doc(db, "licenses", license.id), {
+          active_devices: updatedDevices
+        });
+      }
+      await logAuditAction('REMOTE_WIPE', { licenseId: license.id, deviceId });
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to issue Remote Wipe command.");
     }
   };
 
@@ -89,6 +144,30 @@ export default function AdminDashboard() {
   const singleKeys = licenses.filter(l => l.type === 'single_user').length;
   const multiKeys = licenses.filter(l => l.type === 'multi_user').length;
   const mockRevenue = (singleKeys * 499) + (multiKeys * 1999);
+
+  const fleetDevices: any[] = [];
+  licenses.forEach(lic => {
+    if (lic.type === 'single_user' && lic.bound_device_id) {
+      fleetDevices.push({
+        deviceId: lic.bound_device_id,
+        role: 'Admin',
+        licenseId: lic.id,
+        license: lic,
+        wipePending: lic.remote_wipe_pending || false
+      });
+    } else if (lic.type === 'multi_user' && lic.active_devices) {
+      lic.active_devices.forEach((d: any) => {
+        fleetDevices.push({
+          deviceId: d.id,
+          role: d.type,
+          nickname: d.nickname,
+          licenseId: lic.id,
+          license: lic,
+          wipePending: d.remote_wipe_pending || false
+        });
+      });
+    }
+  });
 
   return (
     <main className="container" style={{ paddingTop: '4rem', paddingBottom: '6rem' }}>
@@ -193,6 +272,52 @@ export default function AdminDashboard() {
               {licenses.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>NO LICENSES FOUND</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Fleet Management */}
+      <section style={{ marginTop: '4rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>FLEET HARDWARE (NODES)</h2>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Hardware ID</th>
+                <th>Role / Nickname</th>
+                <th>License Key</th>
+                <th>Node Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fleetDevices.map((node, i) => (
+                <tr key={`${node.deviceId}-${i}`}>
+                  <td style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{node.deviceId}</td>
+                  <td>{node.role} {node.nickname ? `(${node.nickname})` : ''}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{node.licenseId}</td>
+                  <td>
+                    {node.wipePending ? (
+                      <span style={{ color: 'red', fontWeight: 'bold' }}>KILL SWITCH PENDING</span>
+                    ) : (
+                      <span style={{ color: 'green', fontWeight: 'bold' }}>ACTIVE</span>
+                    )}
+                  </td>
+                  <td>
+                    {!node.wipePending && (
+                      <button onClick={() => handleRemoteWipe(node.license, node.deviceId)} className="oru-btn" style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', backgroundColor: 'red', borderColor: 'red' }}>
+                        WIPE NODE
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {fleetDevices.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>NO ACTIVE NODES DETECTED</td>
                 </tr>
               )}
             </tbody>
